@@ -1,0 +1,31 @@
+{
+  "name": "@agentraft/adapters-0g",
+  "version": "0.1.0",
+  "description": "AgentRaft adapters: 0G Storage (LogStore), 0G Chain (ConsensusGate, IdentityProvider), 0G Compute (TEE-verified Agent helper).",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "contracts/*.sol", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "hardhat:compile": "hardhat compile",
+    "hardhat:test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network testnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network mainnet"
+  },
+  "dependencies": {
+    "@agentraft/core": "workspace:*",
+    "@0glabs/0g-ts-sdk": "^0.3.1",
+    "@0glabs/0g-serving-broker": "^0.3.0",
+    "ethers": "^6.13.4"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@openzeppelin/contracts": "^5.0.2",
+    "@types/node": "^22.9.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.16",
+    "typescript": "^5.6.3"
+  }
+}

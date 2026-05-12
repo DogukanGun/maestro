@@ -1,0 +1,9 @@
+{
+  "task": "I wanna invest to SOL token, what do u think",
+  "agentSources": {
+    "leader": "openai",
+    "risk": "openai",
+    "compliance": "openai",
+    "market": "openai"
+  }
+}

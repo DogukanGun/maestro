@@ -1,0 +1,22 @@
+{
+  "name": "@agentraft/core",
+  "version": "0.1.0",
+  "description": "AgentRaft Levels 1+2: protocol schema and orchestration engine. Framework-agnostic, no Web3.",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

@@ -1,0 +1,30 @@
+export const AGENT_REGISTRY_ABI = [
+  'function minStake() view returns (uint256)',
+  'function agents(address) view returns (string role, uint256 stake, bool active)',
+  'function registeredCount() view returns (uint256)',
+  'function activeAgents() view returns (address[])',
+  'function isActive(address) view returns (bool)',
+  'function registerAgent(string role) payable',
+  'function setActive(bool active)',
+  'event AgentRegistered(address indexed agent, string role, uint256 stake)',
+] as const;
+
+export const SWARM_CONSENSUS_ABI = [
+  'function currentLeader() view returns (address)',
+  'function currentEpoch() view returns (uint256)',
+  'function activeProposal() view returns (bytes32)',
+  'function quorum() view returns (uint256)',
+  'function followerCount() view returns (uint256)',
+  'function agents() view returns (address[])',
+  'function proposeAction(bytes32 actionHash, bytes32 logRef)',
+  'function voteApprove(bytes32 actionHash)',
+  'function triggerLeaderElection(bytes32 reasonRef)',
+  'function executeAction(bytes32 actionHash)',
+  'function sealLogBatch(uint256 epoch, bytes32 ref)',
+  'event Proposed(bytes32 indexed actionHash, address indexed leader, bytes32 logRef, uint256 epoch)',
+  'event Voted(bytes32 indexed actionHash, address indexed voter, uint256 approvals)',
+  'event LeaderElectionTriggered(bytes32 indexed actionHash, address indexed voter, uint256 electionVotes)',
+  'event LeaderDeposed(bytes32 indexed actionHash, address indexed oldLeader, address indexed newLeader, uint256 epoch)',
+  'event Executed(bytes32 indexed actionHash, uint256 approvals)',
+  'event LogBatchSealed(uint256 indexed epoch, bytes32 ref)',
+] as const;
