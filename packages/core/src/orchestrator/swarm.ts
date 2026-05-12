@@ -17,6 +17,8 @@ export interface RunSwarmOptions {
   maxEpochs?: number;
   now?: () => number;
   mode?: 'task' | 'greet';
+  /** If true, skip the leader election + greet phase and use whatever leader the consensusGate already has. Used for subsequent runs in a session where a leader is already established. */
+  skipElection?: boolean;
 }
 
 export async function runSwarm(opts: RunSwarmOptions): Promise<SwarmOutcome> {
@@ -31,6 +33,7 @@ export async function runSwarm(opts: RunSwarmOptions): Promise<SwarmOutcome> {
     maxEpochs = 5,
     now = () => Date.now(),
     mode = 'task',
+    skipElection = false,
   } = opts;
 
   if (agents.length < 2) throw new Error('runSwarm requires at least 2 agents');
@@ -80,8 +83,37 @@ export async function runSwarm(opts: RunSwarmOptions): Promise<SwarmOutcome> {
 
   // ── Leader Election Phase ──────────────────────────────────────────────────
   // If at least 2 agents implement nominate(), run an election before any proposals.
+  // Skipped when skipElection is set — reuse the leader already on the consensusGate.
   const nominators = agents.filter((a) => a.nominate);
-  if (nominators.length >= 2) {
+  if (skipElection && nominators.length >= 2) {
+    // Persisted-leader path: no nomination, no greet (unless this is greet mode).
+    const persistedLeaderId = await consensusGate.currentLeader();
+    if (mode === 'greet') {
+      const electedAgent = agentById.get(persistedLeaderId);
+      if (electedAgent?.greet) {
+        const greetCtx: SwarmContext = {
+          epoch: 0,
+          leader: persistedLeaderId,
+          followers: identities.filter((i) => i.id !== persistedLeaderId),
+          history: [],
+          task,
+        };
+        const greeting = await electedAgent.greet(greetCtx);
+        await publish({
+          agent_id: persistedLeaderId,
+          timestamp: now(),
+          epoch: 0,
+          nonce: nonce++,
+          message_type: 'CHAT',
+          payload: { text: greeting.text },
+        });
+      }
+      await logStore.seal(0);
+      return { status: 'greeted', epoch: 0, leader: persistedLeaderId };
+    }
+    // task mode + skipElection: jump straight to proposal loop
+    epoch = 1;
+  } else if (nominators.length >= 2) {
     const electionCtx: SwarmContext = {
       epoch: 0,
       leader: await consensusGate.currentLeader(),

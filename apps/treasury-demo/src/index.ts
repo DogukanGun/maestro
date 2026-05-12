@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { config as loadEnv } from 'dotenv';
-import { appendFileSync, mkdirSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 loadEnv();
@@ -120,6 +120,17 @@ async function main(): Promise<void> {
   const runningPath = join(runDir, 'running.json');
   const statusPath = join(runDir, 'status.json');
   const taskPath = join(runDir, 'task.json');
+
+  // Persistent leader across runs — election happens only on first run.
+  // After that, every task reuses the same leader (until a depose mid-task elects a new one).
+  const leaderStatePath = join(flags.out, '_leader.json');
+  let persistedLeader: string | null = null;
+  if (existsSync(leaderStatePath)) {
+    try {
+      const parsed = JSON.parse(readFileSync(leaderStatePath, 'utf8'));
+      if (typeof parsed?.leader === 'string') persistedLeader = parsed.leader;
+    } catch { /* ignore */ }
+  }
 
   // Try to set up 0G Compute broker
   const zg = await tryInitZgBroker();
@@ -250,7 +261,10 @@ async function main(): Promise<void> {
   });
 
   const logStore = new InMemoryLogStore();
-  const consensusGate = new InMemoryConsensusGate({ agents: agentIds, initialLeader: 'leader' });
+  const consensusGate = new InMemoryConsensusGate({
+    agents: agentIds,
+    initialLeader: persistedLeader ?? 'leader',
+  });
   const messageBus = new InMemoryMessageBus();
   const identityProvider = new InMemoryIdentityProvider(
     agentIds.map((id) => ({ id, role: 'follower' as const }))
@@ -287,7 +301,20 @@ async function main(): Promise<void> {
       task: { kind: mode, text: flags.task },
       maxEpochs: 3,
       mode,
+      // First run elects the leader; every subsequent run reuses it.
+      skipElection: persistedLeader !== null,
     });
+
+    // Persist whoever is leader at the end of this run (may have changed via depose).
+    try {
+      const finalLeader = await consensusGate.currentLeader();
+      writeFileSync(
+        leaderStatePath,
+        JSON.stringify({ leader: finalLeader, electedAt: Date.now() }, null, 2)
+      );
+    } catch (e) {
+      console.warn('[state] failed to persist leader:', e);
+    }
 
     writeFileSync(
       eventsJsonPath,
