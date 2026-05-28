@@ -3,17 +3,17 @@ import { verifyMessage } from 'ethers';
 import type { AgentIdentity, IdentityProvider, Message } from '@agentraft/core';
 import { AGENT_REGISTRY_ABI } from './abi.js';
 
-export interface ZgChainIdentityProviderOptions {
+export interface SomniaChainIdentityProviderOptions {
   registryAddress: string;
   runner: ContractRunner;
   agentIds?: string[];
 }
 
-export class ZgChainIdentityProvider implements IdentityProvider {
+export class SomniaChainIdentityProvider implements IdentityProvider {
   private readonly registry: Contract;
   private readonly explicitIds?: string[];
 
-  constructor(opts: ZgChainIdentityProviderOptions) {
+  constructor(opts: SomniaChainIdentityProviderOptions) {
     this.registry = new Contract(opts.registryAddress, [...AGENT_REGISTRY_ABI], opts.runner);
     if (opts.agentIds) this.explicitIds = opts.agentIds;
   }

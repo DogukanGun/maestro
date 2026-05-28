@@ -70,6 +70,6 @@ That's the whole library — no chain, no LLM keys, no Web3 install.
 ## Wiring AgentRaft to a real backend
 
 To run AgentRaft on-chain, swap the in-memory ports for real adapters. The
-[`@agentraft/adapters-0g`](../adapters-0g) package implements `LogStore`,
-`ConsensusGate`, and `IdentityProvider` against the 0G network — but core has
-no idea any of that exists.
+[`@agentraft/adapters-somnia`](../adapters-somnia) package implements `LogStore`,
+`ConsensusGate`, and `IdentityProvider` against Somnia's Shannon testnet — but
+core has no idea any of that exists.

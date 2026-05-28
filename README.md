@@ -2,9 +2,9 @@
 
 **RAID for AI agents.** A fault-tolerant multi-agent protocol that applies Raft-like consensus to LLM swarms: a leader proposes, followers vote, and a quorum can depose a leader whose proposal is unsafe. AgentRaft makes Byzantine faults — the silent hallucinations that propagate unchecked through today's multi-agent systems — both detectable and recoverable, with the entire decision trail anchored to verifiable storage.
 
-The protocol is deliberately split: **a framework-agnostic core library** (`packages/core`) and **drop-in adapters** for backends like 0G (`packages/adapters-0g`). Anyone can run AgentRaft on their own agents without taking on a Web3 dependency.
+The protocol is deliberately split: **a framework-agnostic core library** (`packages/core`) and **drop-in adapters** for EVM L1 backends like Somnia (`packages/adapters-somnia`). Anyone can run AgentRaft on their own agents without taking on a Web3 dependency.
 
-This repo is the [0G APAC Hackathon](https://www.hackquest.io/hackathons/0G-APAC-Hackathon) Track 3 submission. The reference app `apps/treasury-demo` is one concrete instantiation; the same framework runs any domain.
+This repo is the [Somnia Agentathon](https://www.encodeclub.com/programmes/agentathon) submission, built on Encode Club's programme with Somnia as the chain backend. The reference app `apps/treasury-demo` is one concrete instantiation; the same framework runs any domain.
 
 > 📄 **Research paper:** the full protocol, threat model, and consensus argument are published on Zenodo — **["AgentRaft: Raft-Inspired Byzantine Fault Tolerance for LLM Agent Swarms"](https://zenodo.org/records/20017799)**.
 
@@ -30,7 +30,7 @@ interface Agent {
 }
 ```
 
-Each instance is **stateful** and encapsulates its own behavior — LLM prompts, policy rules, TEE calls, whatever you like. The reference app ships four such classes:
+Each instance is **stateful** and encapsulates its own behavior — LLM prompts, policy rules, retrieval calls, whatever you like. The reference app ships four such classes:
 - [`LeaderAgent`](apps/treasury-demo/src/agents/leader.ts) — Coordinator
 - [`RiskAgent`](apps/treasury-demo/src/agents/risk.ts) — Critic
 - [`ComplianceAgent`](apps/treasury-demo/src/agents/compliance.ts) — Strategist
@@ -111,7 +111,7 @@ flowchart TB
         direction TB
         L6["<b>L6 · Dashboard</b><br/><code>apps/web</code><br/><i>Next.js · polls /api/run<br/>for the live timeline</i>"]
         L5["<b>L5 · Reference app</b><br/><code>apps/treasury-demo</code><br/><i>4 LLM-backed Agent classes<br/>CLI runner · _leader.json</i>"]
-        L4["<b>L4 · Adapters</b><br/><code>packages/adapters-0g</code><br/><i>0G Compute (TEE)<br/>ZgChainConsensusGate · 0G Storage</i>"]
+        L4["<b>L4 · Adapters</b><br/><code>packages/adapters-somnia</code><br/><i>Somnia EVM consensus<br/>Event-anchored log root</i>"]
     end
     subgraph Core["Framework Core (no Web3)"]
         direction TB
@@ -133,7 +133,7 @@ flowchart TB
 ```mermaid
 flowchart TD
     apps["<b>apps/treasury-demo</b><br/>apps/web"]
-    adapters["<b>@agentraft/adapters-0g</b><br/>0G Chain · Storage · Compute"]
+    adapters["<b>@agentraft/adapters-somnia</b><br/>Somnia EVM · Event-anchored log"]
     core["<b>@agentraft/core</b><br/>only runtime dep: <code>zod</code>"]
     apps --> adapters
     apps --> core
@@ -148,7 +148,7 @@ Grouped at the package level, the six layers collapse to three concerns:
 |---------|----------|-----------|
 | **Protocol** (L1) | `packages/core/src/protocol/` | none |
 | **Orchestration** (L2 + L3) | `packages/core/src/orchestrator/` | none |
-| **Application** (L4 + L5 + L6) | `packages/adapters-0g/`, `apps/*` | yes (optional) |
+| **Application** (L4 + L5 + L6) | `packages/adapters-somnia/`, `apps/*` | yes (optional) |
 
 The boundary is enforced: `packages/core/package.json` declares **`zod` as its only runtime dependency**, and CI guard [`scripts/check-core-deps.mjs`](scripts/check-core-deps.mjs) fails the build if anything else gets added.
 
@@ -156,8 +156,8 @@ The boundary is enforced: `packages/core/package.json` declares **`zod` as its o
 
 - **L1 — Protocol.** [`message.ts`](packages/core/src/protocol/message.ts), [`identity.ts`](packages/core/src/protocol/identity.ts), [`consensus.ts`](packages/core/src/protocol/consensus.ts). Pure types with Zod validation. Zero runtime deps beyond Zod.
 - **L2 — Ports.** Interfaces only ([`ports.ts`](packages/core/src/orchestrator/ports.ts)). The whole point: a downstream impl can be in-memory, on-chain, federated, REST-backed — same orchestrator code calls it.
-- **L3 — In-memory.** [`InMemoryConsensusGate`](packages/core/src/orchestrator/in-memory/consensus-gate.ts), [`InMemoryLogStore`](packages/core/src/orchestrator/in-memory/log-store.ts), [`InMemoryMessageBus`](packages/core/src/orchestrator/in-memory/message-bus.ts), [`InMemoryIdentityProvider`](packages/core/src/orchestrator/in-memory/identity-provider.ts). Production-quality defaults; the entire test suite + the hackathon demo run on these.
-- **L4 — Adapters.** `packages/adapters-0g` swaps inference and consensus for real-world backends: [`ZgComputeAgent`](packages/adapters-0g/src/zg-compute-agent.ts) (TEE-attested inference), `ZgChainConsensusGate` (on-chain Raft state machine), `ZgStorageLogStore` (decentralized log). Solidity sources in [`packages/adapters-0g/contracts/`](packages/adapters-0g/contracts/).
+- **L3 — In-memory.** [`InMemoryConsensusGate`](packages/core/src/orchestrator/in-memory/consensus-gate.ts), [`InMemoryLogStore`](packages/core/src/orchestrator/in-memory/log-store.ts), [`InMemoryMessageBus`](packages/core/src/orchestrator/in-memory/message-bus.ts), [`InMemoryIdentityProvider`](packages/core/src/orchestrator/in-memory/identity-provider.ts). Production-quality defaults; the entire test suite + the reference demo run on these.
+- **L4 — Adapters.** [`packages/adapters-somnia`](packages/adapters-somnia/) swaps consensus and log anchoring onto Somnia's Shannon testnet (EVM L1, chainId 50312, sub-second finality): [`SomniaChainConsensusGate`](packages/adapters-somnia/src/somnia-chain-consensus-gate.ts) turns propose/vote/depose/execute into real on-chain transactions, [`SomniaEventLogStore`](packages/adapters-somnia/src/somnia-event-log-store.ts) anchors each sealed batch's keccak256 root via the `LogBatchSealed` event, and [`SomniaChainIdentityProvider`](packages/adapters-somnia/src/somnia-chain-identity-provider.ts) reads the on-chain agent registry. Solidity sources in [`packages/adapters-somnia/contracts/`](packages/adapters-somnia/contracts/).
 - **L5 — Reference app.** [`apps/treasury-demo/src/agents/`](apps/treasury-demo/src/agents/) — four ~150-line agent classes wired to OpenAI tool-calling. Easy to copy.
 - **L6 — Dashboard.** [`apps/web`](apps/web) — Next.js 14 App Router; polls the JSONL files the demo writes.
 
@@ -273,9 +273,9 @@ That's the whole framework — no chain, no LLM keys, nothing else to install. S
 
 | Port | Default | BYO examples |
 |------|---------|--------------|
-| `Agent` | your code | OpenAI, Anthropic, local model, hardcoded policy, ZgComputeAgent |
-| `ConsensusGate` | `InMemoryConsensusGate` | `ZgChainConsensusGate`, any chain, multi-region quorum |
-| `LogStore` | `InMemoryLogStore` | `ZgStorageLogStore`, S3, Postgres, IPFS |
+| `Agent` | your code | OpenAI, Anthropic, local model, hardcoded policy |
+| `ConsensusGate` | `InMemoryConsensusGate` | `SomniaChainConsensusGate`, any other EVM chain, multi-region quorum |
+| `LogStore` | `InMemoryLogStore` | `SomniaEventLogStore`, S3, Postgres, IPFS |
 | `MessageBus` | `InMemoryMessageBus` | Redis pub/sub, NATS, websockets, on-chain events |
 
 ---
@@ -329,34 +329,42 @@ Two input modes:
 - **Run Swarm** (default) — full deliberation. Triggers a fresh `runSwarm()` cycle: election (if first run) → propose → vote → summarize. All four agents participate.
 - **Quick Ask** (appears after the first run) — single-leader follow-up. Only the current leader replies, using the chat history as context. For "what did you mean by X" type clarifications, not for new decisions.
 
-The agent roster sidebar shows the current leader, the per-agent stats (proposals / approvals / rejections / election votes), and a 🔒 TEE badge when the run used 0G Compute for that agent.
+The agent roster sidebar shows the current leader and the per-agent stats (proposals / approvals / rejections / election votes).
 
 ---
 
-## 0G Integration
+## Somnia Integration
 
-| 0G Service | Where it appears | Adapter |
+[Somnia](https://somnia.network/) is a high-throughput EVM L1 with sub-second finality — a natural fit for an agent swarm where every propose / vote / depose is a real on-chain action. `packages/adapters-somnia` ports the four AgentRaft ports onto Somnia's Shannon testnet (chainId `50312`):
+
+| Somnia Service | Where it appears | Adapter |
 |------------|------------------|---------|
-| **0G Chain** | `SwarmConsensus.sol` + `AgentRegistry.sol` deployed via Hardhat | `ZgChainConsensusGate`, `ZgChainIdentityProvider` |
-| **0G Storage** | Each batch of L1 messages is sealed; `rootHash` anchored on-chain | `ZgStorageLogStore` |
-| **0G Compute** | Critic + Strategist run on 0G's TEE-verified inference; TEE signature rides in the VOTE payload | [`ZgComputeAgent`](packages/adapters-0g/src/zg-compute-agent.ts) |
+| **Somnia EVM (consensus)** | `SwarmConsensus.sol` — propose, vote, depose, execute as on-chain transactions | [`SomniaChainConsensusGate`](packages/adapters-somnia/src/somnia-chain-consensus-gate.ts) |
+| **Somnia EVM (identity)** | `AgentRegistry.sol` — stake-gated agent set with role tags | [`SomniaChainIdentityProvider`](packages/adapters-somnia/src/somnia-chain-identity-provider.ts) |
+| **Log anchoring** | Each sealed batch's keccak256 root committed via the `LogBatchSealed(epoch, ref)` event | [`SomniaEventLogStore`](packages/adapters-somnia/src/somnia-event-log-store.ts) |
 
-### Why TEE matters
-
-Hostile or manipulated LLM responses are a real attack vector for agents that vote on real-world actions. `ZgComputeAgent` calls a 0G Service Provider's `/chat/completions` via the official `@0glabs/0g-serving-broker`, validates the TEE attestation, and abstains if it fails. The treasury-demo auto-detects `ZG_COMPUTE_PROVIDER` in the env and routes Critic + Strategist through 0G when configured.
+The full message body stays in local JSONL files; only the root hash hits the chain. That gives "**chain-anchored root, locally-archived body**" — every JSONL file is provably linked to a Somnia block, and any tamper at the byte level fails verification against the on-chain ref.
 
 ### Deploy the contracts
 
 ```bash
 cp .env.example .env
-# fill in DEPLOYER_PRIVATE_KEY (testnet faucet: https://faucet.0g.ai)
-pnpm --filter @agentraft/adapters-0g hardhat:compile
-pnpm --filter @agentraft/adapters-0g hardhat:test         # 7 tests, all paths
-pnpm --filter @agentraft/adapters-0g deploy:testnet       # writes deployments.16602.json
-pnpm --filter @agentraft/adapters-0g deploy:mainnet       # writes deployments.16661.json
+# fill in DEPLOYER_PRIVATE_KEY (Shannon testnet faucet: https://testnet.somnia.network/)
+pnpm --filter @agentraft/adapters-somnia hardhat:compile
+pnpm --filter @agentraft/adapters-somnia hardhat:test       # 7 tests, all paths
+pnpm --filter @agentraft/adapters-somnia deploy:testnet     # writes deployments.50312.json
 ```
 
-The deploy script registers three signers as `leader`, `risk`, and `compliance` agents (each posting `0.001 OG` stake), then deploys `SwarmConsensus` wired to that registry. A `deployments.<chainId>.json` file is written so the demo and dashboard can pick up the addresses automatically.
+The deploy script registers three signers as `leader`, `risk`, and `compliance` agents (each posting `0.001 STT` stake), then deploys `SwarmConsensus` wired to that registry. A `deployments.50312.json` file is written so the demo can pick up the addresses automatically.
+
+### Live on Somnia Shannon testnet
+
+| Contract | Address | Explorer |
+|---|---|---|
+| **AgentRegistry** | `0xa8420E95A6D43489f6BcD5699E13C2EC7A635d06` | [view](https://shannon-explorer.somnia.network/address/0xa8420E95A6D43489f6BcD5699E13C2EC7A635d06) |
+| **SwarmConsensus** | `0x9476f7Be5A42F2d6f3186eED7f00F1fEf2c18AF6` | [view](https://shannon-explorer.somnia.network/address/0x9476f7Be5A42F2d6f3186eED7f00F1fEf2c18AF6) |
+
+Both deployed via `deploy:testnet` on chainId `50312`; see [`packages/adapters-somnia/deployments.50312.json`](packages/adapters-somnia/deployments.50312.json) for the full deployment record.
 
 ---
 
@@ -370,12 +378,12 @@ maestro/
 │   │   │   ├── protocol/           # L1: message, identity, consensus types
 │   │   │   └── orchestrator/       # L2 + L3: ports, runSwarm, in-memory defaults
 │   │   └── test/                   # Vitest specs (protocol + runSwarm lifecycle)
-│   └── adapters-0g/                # @agentraft/adapters-0g — L4 0G adapters
-│       ├── src/                    # ZgComputeAgent, ZgChainConsensusGate, etc.
+│   └── adapters-somnia/            # @agentraft/adapters-somnia — L4 Somnia adapters
+│       ├── src/                    # SomniaChainConsensusGate, SomniaEventLogStore, etc.
 │       └── contracts/              # SwarmConsensus.sol, AgentRegistry.sol
 ├── apps/
 │   ├── treasury-demo/              # L5: reference 4-agent app
-│   │   └── src/agents/             # leader, risk, compliance, market, nomination, llm, zg-*
+│   │   └── src/agents/             # leader, risk, compliance, market, nomination, llm
 │   └── web/                        # L6: Next.js dashboard
 │       ├── app/api/                # /api/run, /api/run/start, /api/chat
 │       └── components/             # AgentRoster, Conversation, CommandBar, ProposalHeader
@@ -396,7 +404,7 @@ pnpm install
 # 2. set your OpenAI key (required for the reference agents)
 cp .env.example .env
 # edit .env: OPENAI_API_KEY=sk-...
-# optional 0G: ZG_COMPUTE_PROVIDER=...  ZG_PRIVATE_KEY=...  ZG_RPC_URL=...
+# optional Somnia: DEPLOYER_PRIVATE_KEY=...  (only needed for adapters-somnia hardhat scripts)
 
 # 3. build all packages
 pnpm --filter @agentraft/core build
@@ -417,7 +425,7 @@ Submit "hi" first to watch the election happen, then ask any real question. Subs
 | Check | Command | Expected |
 |-------|---------|----------|
 | Core unit tests | `pnpm --filter @agentraft/core test` | 8 passing |
-| Contract tests | `cd packages/adapters-0g && npx hardhat test` | 7 passing |
+| Contract tests | `cd packages/adapters-somnia && npx hardhat test` | 7 passing |
 | Core dep guard | `node scripts/check-core-deps.mjs` | `packages/core deps OK` |
 | End-to-end demo | `pnpm --filter treasury-demo start -- --task "test"` | `outcome.json` with `status: executed` |
 | Dashboard | `pnpm --filter agentraft-web start && curl localhost:3000/api/run` | JSON with non-empty `events` / `messages` after a run |
@@ -446,7 +454,7 @@ If you cite this work in academic or hackathon writeups, please reference the Ze
 ## Design principles
 
 - **Protocol-first, not framework-first.** Types and ports come before any implementation. Throw out every impl and the protocol is still coherent.
-- **One process or many — same agent code.** The in-memory impls run a swarm in a single Node process; the 0G adapters run the same swarm across a chain. Agent classes don't change.
+- **One process or many — same agent code.** The in-memory impls run a swarm in a single Node process; the Somnia adapter runs the same swarm across a chain. Agent classes don't change.
 - **Auditability beats cleverness.** Every decision is a typed message in a sealable log. The chat view in the dashboard is the same data the on-chain log stores.
 
 ---
@@ -462,4 +470,4 @@ If you cite this work in academic or hackathon writeups, please reference the Ze
 
 ## License
 
-MIT. Built for the 0G APAC Hackathon, May 2026.
+MIT. Built for the Somnia Agentathon by Encode Club, May 2026.

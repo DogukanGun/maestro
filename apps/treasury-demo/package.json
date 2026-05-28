@@ -1,7 +1,7 @@
 {
   "name": "treasury-demo",
   "version": "0.1.0",
-  "description": "AgentRaft hackathon demo: DeFi Treasury Guardian.",
+  "description": "AgentRaft reference app: domain-agnostic decision swarm.",
   "license": "MIT",
   "private": true,
   "main": "./dist/index.js",
@@ -11,14 +11,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "swarm": "ts-node src/index.ts",
-    "swarm:built": "node dist/index.js",
-    "replay": "ts-node src/replay.ts"
+    "swarm:built": "node dist/index.js"
   },
   "dependencies": {
     "@agentraft/core": "workspace:*",
-    "@agentraft/adapters-0g": "workspace:*",
     "openai": "^4.76.0",
-    "ethers": "^6.13.4",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

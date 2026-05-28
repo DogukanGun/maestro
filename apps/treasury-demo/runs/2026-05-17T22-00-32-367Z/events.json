@@ -1,0 +1,48 @@
+[
+  {
+    "name": "Proposed",
+    "data": {
+      "actionHash": "0x489b4bd5a6215a51b0275b60b7665ea6de5455b99eda3bf31b73a73b3e3180bd",
+      "logRef": "0x52368211c2f17eaf6c6506300950baa370fe6d5906da55260edc0ba2104b2072",
+      "leader": "market",
+      "epoch": 0
+    }
+  },
+  {
+    "name": "LogBatchSealed",
+    "data": {
+      "epoch": 1,
+      "ref": "0x52368211c2f17eaf6c6506300950baa370fe6d5906da55260edc0ba2104b2072"
+    }
+  },
+  {
+    "name": "Voted",
+    "data": {
+      "actionHash": "0x489b4bd5a6215a51b0275b60b7665ea6de5455b99eda3bf31b73a73b3e3180bd",
+      "voter": "leader",
+      "approvals": 1
+    }
+  },
+  {
+    "name": "Voted",
+    "data": {
+      "actionHash": "0x489b4bd5a6215a51b0275b60b7665ea6de5455b99eda3bf31b73a73b3e3180bd",
+      "voter": "compliance",
+      "approvals": 2
+    }
+  },
+  {
+    "name": "Executed",
+    "data": {
+      "actionHash": "0x489b4bd5a6215a51b0275b60b7665ea6de5455b99eda3bf31b73a73b3e3180bd",
+      "approvals": 2
+    }
+  },
+  {
+    "name": "LogBatchSealed",
+    "data": {
+      "epoch": 1,
+      "ref": "0xe1bff04ddf086da60bde4a78050c7b4f00283fdff9ab2c093aa3e25e4244d013"
+    }
+  }
+]

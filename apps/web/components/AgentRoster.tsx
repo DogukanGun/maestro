@@ -10,7 +10,6 @@ interface Props {
   runId: string | null;
   outcome: { status: string; epoch: number } | null;
   activeAgent?: string | null;
-  agentSources?: Record<string, string>;
 }
 
 export default function AgentRoster({
@@ -21,7 +20,6 @@ export default function AgentRoster({
   runId,
   outcome,
   activeAgent,
-  agentSources,
 }: Props): JSX.Element {
   const ordered = agentIds.length
     ? agentIds
@@ -60,11 +58,6 @@ export default function AgentRoster({
                   {wasInitial && (
                     <span className="text-[10px] text-rose-300/80 uppercase tracking-wider" title="deposed leader">
                       deposed
-                    </span>
-                  )}
-                  {agentSources?.[id] === '0g' && (
-                    <span className="text-[10px] text-teal-300/90 border border-teal-400/30 rounded px-1 py-0.5 bg-teal-500/10" title="TEE-verified via 0G Compute">
-                      🔒 TEE
                     </span>
                   )}
                 </div>

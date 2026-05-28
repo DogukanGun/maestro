@@ -1,9 +1,0 @@
-{
-  "task": "hi",
-  "agentSources": {
-    "leader": "openai",
-    "risk": "openai",
-    "compliance": "openai",
-    "market": "openai"
-  }
-}

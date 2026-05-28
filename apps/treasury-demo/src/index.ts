@@ -18,10 +18,7 @@ import {
 import { LeaderAgent } from './agents/leader';
 import { RiskAgent } from './agents/risk';
 import { ComplianceAgent } from './agents/compliance';
-import { ZgRiskAgent } from './agents/zg-risk';
-import { ZgComplianceAgent } from './agents/zg-compliance';
 import { MarketAgent } from './agents/market';
-import type { ZgComputeBrokerLike } from '@agentraft/adapters-0g';
 
 interface CliFlags {
   task: string;
@@ -83,25 +80,6 @@ async function classifyInput(task: string, model?: string): Promise<{ mode: 'tas
   }
 }
 
-async function tryInitZgBroker(): Promise<{ broker: ZgComputeBrokerLike; provider: string } | null> {
-  const zgProvider = process.env.ZG_COMPUTE_PROVIDER;
-  if (!zgProvider) return null;
-  try {
-    const { ethers } = await import('ethers');
-    const { createZGServingNetworkBroker } = await import('@0glabs/0g-serving-broker' as any);
-    const rpcUrl = process.env.ZG_RPC_URL ?? 'https://evmrpc-testnet.0g.ai';
-    const contractAddr = process.env.ZG_CONTRACT_ADDR ?? '';
-    const rpcProvider = new ethers.JsonRpcProvider(rpcUrl);
-    const signer = new ethers.Wallet(process.env.ZG_PRIVATE_KEY!, rpcProvider);
-    const broker = await createZGServingNetworkBroker(signer, contractAddr);
-    console.log(`[0g]    Compute broker initialised — provider: ${zgProvider}`);
-    return { broker, provider: zgProvider };
-  } catch (e) {
-    console.warn(`[0g]    Failed to init 0G Compute broker, using OpenAI for all agents: ${e}`);
-    return null;
-  }
-}
-
 async function main(): Promise<void> {
   const flags = parseArgs(process.argv.slice(2));
   if (!process.env.OPENAI_API_KEY) {
@@ -132,20 +110,11 @@ async function main(): Promise<void> {
     } catch { /* ignore */ }
   }
 
-  // Try to set up 0G Compute broker
-  const zg = await tryInitZgBroker();
-  const agentSources: Record<string, string> = {
-    leader: 'openai',
-    risk: zg ? '0g' : 'openai',
-    compliance: zg ? '0g' : 'openai',
-    market: 'openai',
-  };
-
   writeFileSync(messagesPath, '');
   writeFileSync(eventsPath, '');
   writeFileSync(
     taskPath,
-    JSON.stringify({ task: flags.task, model: flags.model, agentSources }, null, 2)
+    JSON.stringify({ task: flags.task, model: flags.model }, null, 2)
   );
   writeFileSync(
     runningPath,
@@ -159,11 +128,9 @@ async function main(): Promise<void> {
     );
   };
 
-  console.log(`AgentRaft Treasury Swarm`);
+  console.log(`AgentRaft Decision Swarm`);
   console.log(`  task:    ${flags.task}`);
   console.log(`  model:   ${flags.model ?? 'gpt-4o-mini'}`);
-  console.log(`  risk:    ${agentSources.risk}`);
-  console.log(`  compliance: ${agentSources.compliance}`);
   console.log(`  run dir: ${runDir}\n`);
 
   writeStatus(null, 'classifying input…');
@@ -180,32 +147,16 @@ async function main(): Promise<void> {
       task: flags.task,
       ...(flags.model ? { model: flags.model } : {}),
     }),
-    zg
-      ? new ZgRiskAgent({
-          id: 'risk',
-          task: flags.task,
-          broker: zg.broker,
-          provider: zg.provider,
-          ...(flags.model ? { model: flags.model } : {}),
-        })
-      : new RiskAgent({
-          id: 'risk',
-          task: flags.task,
-          ...(flags.model ? { model: flags.model } : {}),
-        }),
-    zg
-      ? new ZgComplianceAgent({
-          id: 'compliance',
-          task: flags.task,
-          broker: zg.broker,
-          provider: zg.provider,
-          ...(flags.model ? { model: flags.model } : {}),
-        })
-      : new ComplianceAgent({
-          id: 'compliance',
-          task: flags.task,
-          ...(flags.model ? { model: flags.model } : {}),
-        }),
+    new RiskAgent({
+      id: 'risk',
+      task: flags.task,
+      ...(flags.model ? { model: flags.model } : {}),
+    }),
+    new ComplianceAgent({
+      id: 'compliance',
+      task: flags.task,
+      ...(flags.model ? { model: flags.model } : {}),
+    }),
     new MarketAgent({
       id: 'market',
       task: flags.task,

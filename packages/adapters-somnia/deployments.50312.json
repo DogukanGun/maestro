@@ -1,0 +1,10 @@
+{
+  "chainId": 50312,
+  "deployer": "0xe95d5cF4459Cff5504186F02490edfA477F6f45C",
+  "AgentRegistry": "0xa8420E95A6D43489f6BcD5699E13C2EC7A635d06",
+  "SwarmConsensus": "0x9476f7Be5A42F2d6f3186eED7f00F1fEf2c18AF6",
+  "agents": [
+    "0xe95d5cF4459Cff5504186F02490edfA477F6f45C"
+  ],
+  "deployedAt": "2026-05-23T18:48:10.822Z"
+}

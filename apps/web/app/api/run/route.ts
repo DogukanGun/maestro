@@ -21,7 +21,6 @@ interface RunPayload {
   running: boolean;
   status: AgentStatus | null;
   task: string | null;
-  agentSources?: Record<string, string>;
 }
 
 function findRunsDir(): string | null {
@@ -93,7 +92,7 @@ export async function GET(): Promise<NextResponse<RunPayload>> {
   const outcome = readJson<unknown>(join(runDir, 'outcome.json'));
   const running = existsSync(join(runDir, 'running.json'));
   const status = readJson<AgentStatus>(join(runDir, 'status.json'));
-  const taskFile = readJson<{ task: string; agentSources?: Record<string, string> }>(join(runDir, 'task.json'));
+  const taskFile = readJson<{ task: string }>(join(runDir, 'task.json'));
   return NextResponse.json({
     runId: latest,
     runDir,
@@ -104,6 +103,5 @@ export async function GET(): Promise<NextResponse<RunPayload>> {
     running,
     status,
     task: taskFile?.task ?? null,
-    agentSources: taskFile?.agentSources,
   });
 }

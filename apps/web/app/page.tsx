@@ -22,7 +22,6 @@ interface RunPayload {
   running: boolean;
   status: AgentStatus | null;
   task: string | null;
-  agentSources?: Record<string, string>;
 }
 
 export default function Page() {
@@ -121,7 +120,6 @@ export default function Page() {
             runId={data.runId}
             outcome={view.outcome}
             activeAgent={data.status?.active ?? null}
-            agentSources={data.agentSources}
           />
         </div>
         <section className="flex flex-col min-h-0 border-l border-white/5">

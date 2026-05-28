@@ -6,17 +6,17 @@ import type {
 } from '@agentraft/core';
 import { SWARM_CONSENSUS_ABI } from './abi.js';
 
-export interface ZgChainConsensusGateOptions {
+export interface SomniaChainConsensusGateOptions {
   contractAddress: string;
   runner: ContractRunner;
   signersById: Map<string, Signer>;
 }
 
-export class ZgChainConsensusGate implements ConsensusGate {
+export class SomniaChainConsensusGate implements ConsensusGate {
   private readonly contract: Contract;
   private readonly signersById: Map<string, Signer>;
 
-  constructor(opts: ZgChainConsensusGateOptions) {
+  constructor(opts: SomniaChainConsensusGateOptions) {
     this.contract = new Contract(opts.contractAddress, [...SWARM_CONSENSUS_ABI], opts.runner);
     this.signersById = opts.signersById;
   }
