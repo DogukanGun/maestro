@@ -27,6 +27,16 @@
     margin: 0;
   }
 
+  @page {
+    size: A4;
+    margin: 20mm 18mm;
+    @bottom-center {
+      content: counter(page);
+      font-size: 9pt;
+      color: #666;
+    }
+  }
+
   .page {
     max-width: 210mm;
     margin: 0 auto;
@@ -123,6 +133,8 @@
     border-collapse: collapse;
     font-size: 8.5pt;
     margin: 6pt 0 8pt 0;
+    break-inside: avoid;
+    column-span: all;
   }
   th {
     background: #f0f0f0;
