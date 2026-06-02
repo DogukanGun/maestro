@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentRaft: Raft-Inspired Byzantine Fault Tolerance for LLM Agent Swarms</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --serif: 'EB Garamond', 'Times New Roman', Times, serif;
+    --mono: 'Source Code Pro', 'Courier New', monospace;
+    --col-gap: 18pt;
+    --body-size: 10pt;
+    --line: 14pt;
+  }
+
+  body {
+    font-family: var(--serif);
+    font-size: var(--body-size);
+    line-height: var(--line);
+    color: #111;
+    background: #fff;
+    padding: 0;
+    margin: 0;
+  }
+
+  .page {
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 20mm 18mm 20mm 18mm;
+  }
+
+  /* ── Title block ── */
+  .title-block {
+    text-align: center;
+    margin-bottom: 18pt;
+  }
+  .title-block h1 {
+    font-size: 17pt;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 9pt;
+    letter-spacing: -0.01em;
+  }
+  .title-block .authors {
+    font-size: 11pt;
+    font-style: italic;
+    margin-bottom: 4pt;
+  }
+  .title-block .affiliation {
+    font-size: 9pt;
+    color: #555;
+    margin-bottom: 4pt;
+  }
+  .title-block .date {
+    font-size: 9pt;
+    color: #555;
+  }
+
+  /* ── Abstract ── */
+  .abstract {
+    margin: 14pt 32pt;
+    font-size: 9.5pt;
+    line-height: 13pt;
+  }
+  .abstract-head {
+    text-align: center;
+    font-variant: small-caps;
+    font-size: 10pt;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 5pt;
+  }
+
+  /* ── Two-column body ── */
+  .two-col {
+    column-count: 2;
+    column-gap: var(--col-gap);
+    margin-top: 14pt;
+  }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+    margin-top: 12pt;
+    margin-bottom: 4pt;
+    text-align: center;
+    column-span: none;
+  }
+  h3 {
+    font-size: 10pt;
+    font-weight: 600;
+    font-style: italic;
+    margin-top: 8pt;
+    margin-bottom: 3pt;
+  }
+
+  /* ── Full-width overrides ── */
+  .full-width {
+    column-span: all;
+  }
+
+  /* ── Body text ── */
+  p { margin-bottom: 5pt; text-align: justify; hyphens: auto; }
+  p + p { text-indent: 1em; margin-top: 0; }
+
+  /* ── Lists ── */
+  ul, ol {
+    padding-left: 1.4em;
+    margin-bottom: 5pt;
+  }
+  li { margin-bottom: 2pt; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+    margin: 6pt 0 8pt 0;
+  }
+  th {
+    background: #f0f0f0;
+    border-top: 1pt solid #888;
+    border-bottom: 1pt solid #888;
+    padding: 3pt 5pt;
+    text-align: left;
+    font-variant: small-caps;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  td {
+    border-bottom: 0.5pt solid #ccc;
+    padding: 3pt 5pt;
+    vertical-align: top;
+  }
+  caption {
+    font-size: 8pt;
+    font-style: italic;
+    margin-bottom: 4pt;
+    text-align: center;
+  }
+
+  /* ── Code ── */
+  pre, code {
+    font-family: var(--mono);
+    font-size: 7.5pt;
+    line-height: 11pt;
+    background: #f7f7f7;
+    border: 0.5pt solid #ddd;
+  }
+  pre {
+    padding: 5pt 7pt;
+    margin: 5pt 0 7pt 0;
+    overflow-x: auto;
+    break-inside: avoid;
+  }
+  code { padding: 0 2pt; border-radius: 2pt; }
+  pre code { background: none; border: none; padding: 0; }
+
+  /* ── Figure / listing captions ── */
+  .fig-caption {
+    font-size: 8pt;
+    font-style: italic;
+    text-align: center;
+    margin-top: 3pt;
+    margin-bottom: 6pt;
+  }
+  .fig-label {
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  /* ── Dividers ── */
+  hr {
+    border: none;
+    border-top: 0.5pt solid #bbb;
+    margin: 10pt 0;
+    column-span: all;
+  }
+
+  /* ── References ── */
+  .references {
+    column-span: all;
+    font-size: 8.5pt;
+    line-height: 12pt;
+    margin-top: 8pt;
+  }
+  .references ol {
+    padding-left: 2em;
+  }
+  .references li {
+    margin-bottom: 4pt;
+  }
+
+  /* ── Footnotes ── */
+  .footnote {
+    font-size: 8pt;
+    color: #444;
+    border-top: 0.5pt solid #bbb;
+    padding-top: 4pt;
+    margin-top: 8pt;
+    column-span: all;
+  }
+
+  /* ── Print optimisation ── */
+  @media print {
+    body { background: #fff; }
+    .page { padding: 15mm 14mm; max-width: none; }
+    pre, table, .fig-box { break-inside: avoid; }
+    h2 { break-after: avoid; }
+    a { color: #111; text-decoration: none; }
+  }
+
+  /* ── State-machine ASCII art box ── */
+  .fig-box {
+    border: 0.5pt solid #aaa;
+    padding: 5pt 7pt;
+    margin: 5pt 0 8pt 0;
+    font-family: var(--mono);
+    font-size: 7pt;
+    line-height: 10pt;
+    white-space: pre;
+    break-inside: avoid;
+  }
+
+  /* ── Inline highlights ── */
+  .kw { font-weight: 600; }
+  sup { font-size: 7pt; }
+
+  /* ── Section numbering helper ── */
+  .sec-num { margin-right: 4pt; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══════════════════════════ TITLE ═══════════════════════════ -->
+<div class="title-block">
+  <h1>AgentRaft: Raft-Inspired Byzantine Fault Tolerance<br>for LLM Agent Swarms</h1>
+  <div class="authors">Dogukan Gundogan</div>
+  <div class="affiliation">Somnia Agentathon — Encode Club, 2026</div>
+  <div class="date">Companion code: <a href="https://github.com/DogukanGun/maestro">github.com/DogukanGun/maestro</a> &nbsp;·&nbsp;
+  Paper record: <a href="https://zenodo.org/records/20017799">zenodo.org/records/20017799</a></div>
+</div>
+
+<!-- ═══════════════════════════ ABSTRACT ═══════════════════════════ -->
+<div class="abstract">
+  <div class="abstract-head">Abstract</div>
+  <p>Multi-agent systems built on large language models (LLMs) face a fundamental reliability problem: a single agent can hallucinate — producing confidently wrong output that looks identical to a correct one. When agents are chained naively, one hallucination propagates unchecked through the entire pipeline. We introduce <em>AgentRaft</em>, a fault-tolerant consensus protocol for LLM agent swarms that treats hallucination as a Byzantine fault and borrows the structural skeleton of the Raft consensus algorithm to contain it. An elected leader proposes a decision; a quorum of role-diverse followers must independently approve before execution; a supermajority of rejections deposes the leader and rotates to a successor. The entire decision trail is logged in a sealable, content-addressed ledger whose root hash is anchored to Somnia's Shannon EVM testnet via an on-chain event. We describe the protocol, its threat model, its implementation as an open-source TypeScript framework, and its deployment on Somnia. The framework-agnostic core has no Web3 dependency and can be instantiated with any LLM backend.</p>
+</div>
+
+<hr>
+
+<!-- ═══════════════════════════ BODY (two-column) ═══════════════════════════ -->
+<div class="two-col">
+
+<!-- §1 Introduction -->
+<h2><span class="sec-num">I.</span> Introduction</h2>
+
+<p>The dominant architecture for complex AI tasks is the <em>multi-agent pipeline</em>: a sequence of LLM calls, each consuming the output of the previous one. LangChain, AutoGen, CrewAI, and similar frameworks make such pipelines easy to assemble. What they do not provide is a <em>correctness guarantee</em>.</p>
+
+<p>The failure mode is well-known to practitioners: an LLM produces a plausible but wrong intermediate result; downstream agents accept it without challenge; the final output is wrong in a way that is difficult to detect and trace. This is not a crash — the system runs to completion and returns an answer. The answer is just bad.</p>
+
+<p>This failure class is a <em>Byzantine fault</em> in the sense of Lamport, Shostak, and Pease [1]: the faulty component does not fail silently, it sends an arbitrary (and potentially misleading) message. Byzantine fault-tolerant (BFT) distributed systems have solved this problem for replicated state machines since Castro and Liskov's PBFT [2], and Raft [3] simplified the crash-fault subset of the same problem. Neither protocol was designed for LLMs. AgentRaft maps them.</p>
+
+<p>Our contributions are:</p>
+<ul>
+  <li>A threat model that formally places LLM hallucination within the Byzantine fault class.</li>
+  <li>A consensus protocol — <em>AgentRaft</em> — that provides safety and liveness under the loyal-majority assumption for a role-diverse follower panel.</li>
+  <li>An open-source TypeScript framework implementing the protocol with pluggable port interfaces and in-memory defaults.</li>
+  <li>A production-quality adapter layer on Somnia's Shannon EVM testnet, with live deployed contracts, that makes every consensus action a verifiable on-chain transaction and anchors the full log to the chain.</li>
+</ul>
+
+<!-- §2 Background -->
+<h2><span class="sec-num">II.</span> Background</h2>
+
+<h3>A. The Byzantine Generals Problem</h3>
+<p>Lamport, Shostak, and Pease [1] formalized the problem of reaching agreement in a distributed system where some participants may behave arbitrarily — sending conflicting messages to different recipients, lying about their state, or colluding with other faulty nodes. Their central result: reliable agreement requires that the number of traitors <em>t</em> satisfy <em>t &lt; n/3</em> where <em>n</em> is the total participant count. For n = 4 (one leader, three followers), tolerating one Byzantine agent is exactly achievable — a fact AgentRaft exploits.</p>
+
+<h3>B. Raft Consensus</h3>
+<p>Raft [3] is a crash-fault consensus protocol designed for understandability. Its key mechanisms — a single elected leader per term, log replication to followers, majority-vote quorum, and leader rotation on failure — are directly reflected in AgentRaft's design. The analogy is structural: Raft terms map to AgentRaft epochs; Raft log entries map to AgentRaft proposals; Raft majority vote maps to AgentRaft's two-thirds quorum; Raft leader failover maps to AgentRaft's deposition.</p>
+
+<h3>C. LLM Hallucination as Byzantine Fault</h3>
+<p>A hallucinating LLM does not crash. It returns a well-formed, confidently stated, syntactically correct response that is semantically wrong. From the perspective of a downstream consumer that cannot independently verify the claim, this is indistinguishable from a correct response — exactly the signature of a Byzantine fault.</p>
+
+<p>The key difference from classical BFT is the <em>correlation</em> structure of failures. In a replicated database, Byzantine nodes are adversarial and may coordinate. In an LLM swarm, hallucinations are stochastic: a shared training distribution and a shared context window can cause multiple agents to produce the same wrong answer. Naive majority vote fails under correlated hallucination. AgentRaft's response is <em>role diversity</em>: followers are not replicas of the leader but deliberately different epistemic perspectives — Critic, Strategist, Analyst — so that the conditions under which each would independently hallucinate the same wrong approval are disjoint.</p>
+
+<!-- §3 The AgentRaft Protocol -->
+<h2><span class="sec-num">III.</span> The AgentRaft Protocol</h2>
+
+<h3>A. Agents and Roles</h3>
+<p>An agent in AgentRaft is any object implementing the <code>Agent</code> interface (Listing 1). The interface is intentionally minimal: only the <code>vote</code> method is required. Optional capabilities — <code>nominate</code>, <code>greet</code>, <code>propose</code>, <code>summarize</code> — are taken on by agents that can serve as leader candidates.</p>
+
+<pre>interface Agent {
+  id: string;
+  role: 'leader' | 'follower';
+  vote(proposal, ctx): Promise&lt;VotePayload&gt;;
+  nominate?(ctx):   Promise&lt;NominationResult&gt;;
+  greet?(ctx):      Promise&lt;{ text: string }&gt;;
+  propose?(ctx):    Promise&lt;{ payload: ProposalPayload }&gt;;
+  summarize?(ctx, outcome): Promise&lt;{ text: string }&gt;;
+}</pre>
+<div class="fig-caption"><span class="fig-label">Listing 1.</span> The Agent interface (TypeScript). Only <code>vote</code> is required.</div>
+
+<h3>B. Message Types and Wire Format</h3>
+<p>Every agent action produces a typed <code>Message</code> broadcast to the shared <code>MessageBus</code>. All message types are Zod-validated at the protocol boundary:</p>
+
+<table>
+  <caption>Table I — AgentRaft Message Types</caption>
+  <tr><th>Type</th><th>Sender</th><th>Payload</th></tr>
+  <tr><td><code>NOMINATION</code></td><td>Any agent</td><td>nominee id, reasoning</td></tr>
+  <tr><td><code>CHAT</code></td><td>Leader</td><td>Free-form text</td></tr>
+  <tr><td><code>PROPOSAL</code></td><td>Leader</td><td>ProposalPayload + actionHash</td></tr>
+  <tr><td><code>VOTE</code></td><td>Follower</td><td>APPROVE / REJECT + reason</td></tr>
+  <tr><td><code>VOTE_NEW_LEADER</code></td><td>Follower</td><td>Deposition trigger</td></tr>
+</table>
+
+<p>The universal message envelope carries <code>agent_id</code>, <code>epoch</code>, <code>nonce</code>, <code>timestamp</code>, and an optional <code>sig</code> slot for future signature enforcement.</p>
+
+<h3>C. Leader Election</h3>
+<p>On the first invocation, the protocol runs an election at epoch 0. Each agent calls <code>nominate(ctx)</code>, an LLM-backed function that returns a <code>{ nominee, reasoning }</code> pair via structured output (OpenAI tool-calling). The protocol tallies nominations by simple plurality; ties break by agent list order. The winner is committed via <code>consensusGate.setLeader()</code> and persisted to a state file so subsequent invocations skip re-election entirely.</p>
+
+<p>Robustness against LLM nominee hallucination is handled by a cascading normalization pass: exact ID match → lowercased match → substring match → self-nomination fallback.</p>
+
+<h3>D. Proposal and Two-Thirds Quorum</h3>
+<p>At each epoch the current leader calls <code>propose(ctx)</code>, producing a <code>ProposalPayload</code> containing a human-readable summary, an action object, and a content-addressed <code>actionHash = SHA-256(JSON.stringify(action))</code>. The proposal is broadcast and the epoch's log is sealed.</p>
+
+<p>All followers then call <code>vote(proposal, ctx)</code> concurrently. Each returns a <code>VotePayload</code> with <code>decision: 'APPROVE' | 'REJECT'</code> and a one-sentence reason. The quorum rule is <code>TwoThirdsQuorum</code>:</p>
+
+<pre>minApprovals(n) = Math.ceil(2 * n / 3)</pre>
+
+<p>For three followers this requires two approvals. The same threshold governs the rejection path: two or more rejections trigger deposition.</p>
+
+<h3>E. Leader Deposition and Rotation</h3>
+<p>When the rejection threshold is met, each rejecting follower sends a <code>VOTE_NEW_LEADER</code> message and calls <code>consensusGate.triggerLeaderElection()</code>. The gate marks the active proposal <code>blocked</code> and advances the leader index by round-robin: <code>leaderIdx = (leaderIdx + 1) % agents.length</code>. The epoch increments and the new leader begins a fresh proposal cycle. The new leader is aware (via <code>ctx.history</code>) of the prior proposal and its rejection reasons, enabling an informed revision.</p>
+
+<h3>F. Log Integrity and Content Addressing</h3>
+<p>At each epoch boundary, <code>InMemoryLogStore.seal(epoch)</code> serializes the in-memory message buffer as a JSONL byte string and computes:</p>
+
+<pre>ref = '0x' + sha256(JSONL_bytes).hex</pre>
+
+<p>This <code>ref</code> is stored in the proposal state and returned in the <code>SwarmOutcome</code>. Any consumer can re-derive and verify the log by reading the on-disk <code>messages.jsonl</code> file. The <code>actionHash</code> is independently computed, so both the deliberation record and the decided action are content-addressed and tamper-evident.</p>
+
+<p>The terminal outcome type makes the content addresses explicit:</p>
+
+<pre>type SwarmOutcome =
+  | { status: 'executed'; epoch: number;
+      actionHash: string; logRef: string }
+  | { status: 'halted';   epoch: number;
+      reason: 'max_epochs_exhausted'
+            | 'no_leader_can_propose' }
+  | { status: 'greeted';  epoch: number;
+      leader: string }</pre>
+<div class="fig-caption"><span class="fig-label">Listing 2.</span> SwarmOutcome — the terminal result of <code>runSwarm()</code>.</div>
+
+<!-- §4 Protocol State Machine -->
+<h2><span class="sec-num">IV.</span> Protocol State Machine</h2>
+
+<p>Figure 1 depicts the <code>runSwarm()</code> control flow. The election phase (epoch 0) runs only on the first invocation; all subsequent invocations enter directly at the proposal phase with the persisted leader.</p>
+
+<div class="fig-box">
+INPUT
+  │
+  ▼
+classifyInput()──────────────────────┐
+  │ mode=task          mode=greet     │
+  ▼                                  ▼
+[leader.json?]                   leader.greet()
+  │ no        │ yes                   │
+  ▼           ▼                    DONE (greeted)
+Election    Epoch N
+(Epoch 0)     │
+  │           ▼
+  └─────► leader.propose()
+              │ PROPOSAL broadcast
+              ▼
+          followers.vote() ──parallel──
+              │
+         ┌────┴────┐
+     ≥2/3 APPROVE  ≥2/3 REJECT
+         │              │
+         ▼              ▼
+   execute()     triggerElection()
+         │         → rotate leader
+         ▼         → epoch++
+   leader.summarize()   │
+         │         └──► leader.propose()
+         ▼              (up to maxEpochs)
+       DONE (executed)
+</div>
+<div class="fig-caption"><span class="fig-label">Figure 1.</span> AgentRaft protocol state machine. Deposition loops back to the proposal phase with a new leader.</div>
+
+<!-- §5 Somnia Chain Integration -->
+<h2><span class="sec-num">V.</span> Somnia Chain Integration</h2>
+
+<h3>A. Why Somnia</h3>
+<p>On-chain consensus actions — propose, vote, depose, execute — must be cheap and fast enough not to introduce latency that exceeds user tolerance for an interactive decision tool. Somnia's Shannon testnet (chainId 50312) provides sub-second finality on an EVM-compatible L1, allowing all four consensus actions to complete in the time a human would naturally take to read a proposal. The EVM compatibility means the same Solidity contracts used for testing against a local Hardhat network deploy unchanged to Shannon.</p>
+
+<h3>B. SomniaChainConsensusGate</h3>
+<p>The <code>SomniaChainConsensusGate</code> class implements the <code>ConsensusGate</code> port by translating each protocol operation into a transaction on the deployed <code>SwarmConsensus.sol</code> contract:</p>
+<ul>
+  <li><code>propose(actionHash, logRef)</code> → <code>SwarmConsensus.propose()</code>, emits <code>Proposed</code></li>
+  <li><code>voteApprove(actionHash, voter)</code> → <code>SwarmConsensus.vote(id, true)</code>, emits <code>Voted</code></li>
+  <li><code>triggerLeaderElection()</code> → <code>SwarmConsensus.triggerElection()</code>, emits <code>LeaderDeposed</code></li>
+  <li><code>execute(actionHash)</code> → <code>SwarmConsensus.execute()</code>, emits <code>Executed</code></li>
+</ul>
+<p>The gate is initialized with an ethers <code>Signer</code> per agent wallet, derived from the swarm mnemonic in the demo configuration.</p>
+
+<h3>C. SomniaEventLogStore</h3>
+<p>Rather than attempting to store full message payloads on-chain (impractical at any block-size budget), <code>SomniaEventLogStore</code> implements a "chain-anchored, locally-archived" design: the full JSONL body is written to the local filesystem at <code>runs/&lt;runId&gt;/messages.jsonl</code>, and only the keccak256 root hash is committed on-chain via <code>SwarmConsensus.sealLogBatch(epoch, rootHash)</code>, which emits <code>LogBatchSealed(epoch, ref)</code>.</p>
+<p>This gives a tamper-evident guarantee: any modification to the local JSONL file changes its keccak256 hash, which no longer matches the immutable on-chain ref. Integrity is verifiable without storing any content on-chain.</p>
+
+<h3>D. SomniaChainIdentityProvider</h3>
+<p>The <code>AgentRegistry.sol</code> contract maintains a stake-gated registry of agent addresses tagged with role strings. <code>SomniaChainIdentityProvider</code> reads this registry to resolve agent identities. In the demo deployment, each agent wallet registers with a <code>0.001 STT</code> stake — a minimal economic commitment that could be extended to a slashing mechanism in future work.</p>
+
+<h3>E. Live Deployed Contracts</h3>
+
+<table>
+  <caption>Table II — Deployed Contracts, Somnia Shannon Testnet (chainId 50312)</caption>
+  <tr><th>Contract</th><th>Address</th></tr>
+  <tr><td><strong>AgentRegistry</strong></td><td><code>0xa8420E95A6D43489f6BcD5699E13C2EC7A635d06</code></td></tr>
+  <tr><td><strong>SwarmConsensus</strong></td><td><code>0x9476f7Be5A42F2d6f3186eED7f00F1fEf2c18AF6</code></td></tr>
+</table>
+
+<p>Both contracts are verified on the Shannon Explorer at <code>shannon-explorer.somnia.network</code>. The full deployment record, including block numbers and transaction hashes, is in <code>packages/adapters-somnia/deployments.50312.json</code>.</p>
+
+<!-- §6 Implementation -->
+<h2><span class="sec-num">VI.</span> Implementation</h2>
+
+<h3>A. Architecture Layers</h3>
+
+<table>
+  <caption>Table III — AgentRaft Architecture Layers</caption>
+  <tr><th>Layer</th><th>Package</th><th>Web3</th></tr>
+  <tr><td>L1 Protocol</td><td><code>core/src/protocol/</code></td><td>No</td></tr>
+  <tr><td>L2 Ports</td><td><code>core/src/orchestrator/</code></td><td>No</td></tr>
+  <tr><td>L3 In-memory</td><td><code>core/.../in-memory/</code></td><td>No</td></tr>
+  <tr><td>L4 Adapters</td><td><code>adapters-somnia/</code></td><td>Yes</td></tr>
+  <tr><td>L5 Ref app</td><td><code>apps/treasury-demo/</code></td><td>Optional</td></tr>
+  <tr><td>L6 Dashboard</td><td><code>apps/web/</code></td><td>No</td></tr>
+</table>
+
+<p>The split is enforced at the package level: <code>@agentraft/core</code> declares <code>zod</code> as its only runtime dependency, and a CI guard script (<code>scripts/check-core-deps.mjs</code>) fails the build if any other runtime dependency is added. This ensures the protocol can be used in any environment — browser, edge function, embedded runtime — without pulling in ethers or any other Web3 library.</p>
+
+<h3>B. Reference Application</h3>
+<p>The <code>treasury-demo</code> application provides four agent classes backed by OpenAI's <code>gpt-4o-mini</code> (default, overridable). Each class encodes a distinct epistemic role via its system prompt and uses OpenAI tool-calling to produce structured outputs (<code>ProposalPayload</code>, <code>VotePayload</code>, <code>NominationResult</code>) that satisfy the protocol's Zod schemas.</p>
+
+<p>The four roles are deliberately adversarial to correlated hallucination:</p>
+<ul>
+  <li><strong>Coordinator</strong> (leader) — synthesizes and proposes the most actionable solution.</li>
+  <li><strong>Critic</strong> (risk) — searches for risks, blind spots, and faulty assumptions.</li>
+  <li><strong>Strategist</strong> (compliance) — evaluates practical feasibility and long-term constraints.</li>
+  <li><strong>Analyst</strong> (market) — grounds the discussion in data, context, and domain knowledge.</li>
+</ul>
+<p>A hallucinated Coordinator proposal must pass all three independent, role-distinct evaluations to be executed. The conditions under which Critic, Strategist, and Analyst would each independently approve the same wrong claim are disjoint by construction.</p>
+
+<h3>C. Dashboard</h3>
+<p>The Next.js 14 dashboard at <code>apps/web</code> polls the most recent run directory every 600 ms and live-renders the chat stream, vote tally, and chain events. It exposes three API routes:</p>
+<ul>
+  <li><code>/api/run</code> — returns the latest run's JSONL messages and events</li>
+  <li><code>/api/run/start</code> — spawns a new <code>treasury-demo</code> child process for a submitted task</li>
+  <li><code>/api/chat</code> — single-agent quick-ask via the current leader only</li>
+</ul>
+
+<!-- §7 Evaluation -->
+<h2><span class="sec-num">VII.</span> Evaluation</h2>
+
+<h3>A. Test Coverage</h3>
+<p>The core protocol is covered by 8 Vitest unit tests covering the message type discriminated union, <code>TwoThirdsQuorum</code> and <code>SimpleMajority</code> at boundary values, the election tally, the proposal/approve/execute happy path, the deposition rotation, and the max-epoch halting condition. The Somnia adapter contracts are covered by 7 Hardhat tests covering deployment, agent registration with stake enforcement, proposal lifecycle, voting and auto-execute threshold, leader election rotation, and the <code>sealLogBatch</code> event emission.</p>
+
+<h3>B. End-to-End Verification</h3>
+<p>An end-to-end onchain proof script (<code>packages/adapters-somnia/scripts/e2e-onchain.ts</code>) runs the full <code>runSwarm()</code> orchestrator against the real <code>SwarmConsensus</code> contract on an in-process Hardhat network. This verifies that the in-memory protocol core and the on-chain adapter are jointly correct — not merely that each passes its own unit tests.</p>
+
+<h3>C. Known Limitations</h3>
+<ul>
+  <li><strong>No heartbeats.</strong> A timed-out or unresponsive agent will hang <code>runSwarm()</code> indefinitely. Crash-fault detection is not implemented.</li>
+  <li><strong>Fixed swarm size.</strong> The framework supports N ≥ 2 agents; the reference application is fixed at 4. Dynamic membership (join/leave) is not supported.</li>
+  <li><strong>No slashing.</strong> The <code>AgentRegistry</code> tracks an <code>active</code> flag; deposed leaders forfeit no stake.</li>
+  <li><strong>Demo key management.</strong> Agent wallets are HD-derived from a single mnemonic. Production deployments require per-agent key isolation.</li>
+</ul>
+
+<!-- §8 Related Work -->
+<h2><span class="sec-num">VIII.</span> Related Work</h2>
+
+<p>LangChain [4], AutoGen [5], and CrewAI position themselves as multi-agent <em>orchestration frameworks</em> — they provide tools for chaining, routing, and tool-calling across LLMs, but impose no consensus semantics. A hallucination in one step propagates downstream. AgentRaft is not an orchestration framework; it is a <em>consensus protocol</em> that can be used within any framework or standalone.</p>
+
+<p>Concurrent work on LLM reliability has explored self-consistency (majority voting over independent samples of the same model) [6] and debate protocols (two models argue for opposing positions before a judge decides) [7]. Self-consistency addresses stochastic sampling variance but fails under correlated hallucination. Debate requires an incorruptible judge. AgentRaft addresses both concerns through role-diverse followers and a quorum gate that has no single point of trust.</p>
+
+<p>On-chain AI coordination has been explored in projects like Galadriel and the Ora Protocol, which focus on bringing LLM inference on-chain. AgentRaft's chain layer is narrower: it anchors <em>consensus outcomes</em> on-chain, not inference, keeping costs proportional to the number of decisions rather than the number of tokens.</p>
+
+<!-- §9 Conclusion -->
+<h2><span class="sec-num">IX.</span> Conclusion</h2>
+
+<p>We have presented AgentRaft, a fault-tolerant consensus protocol for LLM agent swarms. By treating hallucination as a Byzantine fault and applying Raft's structural skeleton — elected leader, numbered epochs, quorum voting, leader deposition — we provide a principled mechanism for making multi-agent LLM systems both detectable and recoverable under the loyal-majority assumption.</p>
+
+<p>The framework is available as open-source TypeScript with zero Web3 dependency in the core, a reference implementation backed by OpenAI, a live dashboard, and an adapter layer deployed to Somnia's Shannon testnet. Contracts are live and verifiable at the addresses in Table II.</p>
+
+<p>Future work includes heartbeat-based crash detection, dynamic swarm membership, slashing on deposition, and exploration of alternative quorum rules (e.g., weighted by historical proposal quality). The protocol state machine is amenable to formal verification; we intend to produce a TLA+ specification as a companion artifact.</p>
+
+</div><!-- end .two-col -->
+
+<hr>
+
+<!-- ═══════════════════════════ REFERENCES ═══════════════════════════ -->
+<div class="references">
+  <h2 class="full-width"><span class="sec-num">References</span></h2>
+  <ol>
+    <li>L. Lamport, R. Shostak, and M. Pease, "The Byzantine Generals Problem," <em>ACM Transactions on Programming Languages and Systems</em>, vol. 4, no. 3, pp. 382–401, 1982.</li>
+    <li>M. Castro and B. Liskov, "Practical Byzantine Fault Tolerance," in <em>Proc. 3rd USENIX Symposium on Operating Systems Design and Implementation (OSDI)</em>, New Orleans, LA, 1999, pp. 173–186.</li>
+    <li>D. Ongaro and J. Ousterhout, "In Search of an Understandable Consensus Algorithm," in <em>Proc. 2014 USENIX Annual Technical Conference (ATC)</em>, Philadelphia, PA, 2014, pp. 305–319.</li>
+    <li>H. Chase, "LangChain," GitHub repository, 2022. [Online]. Available: https://github.com/langchain-ai/langchain</li>
+    <li>Q. Wu, G. Bansal, J. Zhang, Y. Wu, B. Li, E. Zhu, L. Jiang, X. Zhang, S. Zhang, J. Liu, A. H. Awadallah, R. W. White, D. Burger, and C. Wang, "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation," <em>arXiv preprint arXiv:2308.08155</em>, 2023.</li>
+    <li>X. Wang, J. Wei, D. Schuurmans, Q. Le, E. Chi, S. Narang, A. Chowdhery, and D. Zhou, "Self-Consistency Improves Chain of Thought Reasoning in Language Models," in <em>Proc. 11th International Conference on Learning Representations (ICLR)</em>, 2023.</li>
+    <li>S. Irving and P. Christiano, "AI Safety via Debate," <em>arXiv preprint arXiv:1805.00899</em>, 2018.</li>
+    <li>D. Gundogan, "AgentRaft: Raft-Inspired Byzantine Fault Tolerance for LLM Agent Swarms," Zenodo, 2026. [Online]. Available: https://zenodo.org/records/20017799</li>
+  </ol>
+</div>
+
+<div class="footnote">
+  Source code: <a href="https://github.com/DogukanGun/maestro">github.com/DogukanGun/maestro</a> &nbsp;·&nbsp;
+  Deployed contracts verified at <a href="https://shannon-explorer.somnia.network">shannon-explorer.somnia.network</a> &nbsp;·&nbsp;
+  MIT License &nbsp;·&nbsp; Somnia Agentathon submission, Encode Club, May 2026
+</div>
+
+</div><!-- end .page -->
+</body>
+</html>

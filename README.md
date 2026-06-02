@@ -331,6 +331,8 @@ Two input modes:
 
 The agent roster sidebar shows the current leader and the per-agent stats (proposals / approvals / rejections / election votes).
 
+> **Deploy to Vercel:** the `apps/web` directory includes a `vercel.json`. Run `vercel --cwd apps/web` (or connect the repo in the Vercel dashboard with root directory set to `apps/web`) to deploy the dashboard publicly.
+
 ---
 
 ## Somnia Integration
@@ -429,6 +431,7 @@ Submit "hi" first to watch the election happen, then ask any real question. Subs
 | Core dep guard | `node scripts/check-core-deps.mjs` | `packages/core deps OK` |
 | End-to-end demo | `pnpm --filter treasury-demo start -- --task "test"` | `outcome.json` with `status: executed` |
 | Dashboard | `pnpm --filter agentraft-web start && curl localhost:3000/api/run` | JSON with non-empty `events` / `messages` after a run |
+| E2E on-chain proof | `cd packages/adapters-somnia && npx hardhat run scripts/e2e-onchain.ts --network hardhat` | `runSwarm()` completes against the real contract on an in-process Hardhat network |
 
 ---
 
@@ -464,7 +467,7 @@ If you cite this work in academic or hackathon writeups, please reference the Ze
 - **Crash-fault detection / heartbeats** — only Byzantine (hallucination) faults are demonstrated. A timed-out agent will hang the swarm.
 - **Variable swarm size at runtime** — the framework supports any N ≥ 2; the reference app is fixed at 4.
 - **Slashing** — the registry tracks an `active` flag; deposed leaders are not financially penalized.
-- **Production key management** — the demo derives agent wallets from a single mnemonic in `.env`.
+- **Production key management** — the demo derives all agent wallets from the single `SWARM_MNEMONIC` in `.env` via HD derivation (path `m/44'/60'/0'/0/n`). Use per-agent isolated keys in production.
 
 ---
 
